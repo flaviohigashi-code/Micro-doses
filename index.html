@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Doses - Cirurgias Curtas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 10px; /* Reduzido para dar mais espaço em telas pequenas */
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px; /* Aumentado levemente para melhorar o toque no celular */
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px; /* Evita zoom automático no iOS */
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #004085;
+        }
+        .results-section {
+            margin-top: 25px;
+            border-top: 2px solid #eee;
+            padding-top: 15px;
+            display: none;
+        }
+        .results-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 5px;
+        }
+        
+        /* Ajustes críticos para a tabela não vazar na tela do celular */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px; /* Tamanho levemente reduzido para garantir o encaixe */
+        }
+        th, td {
+            padding: 8px 4px; /* Otimização de espaçamento interno */
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            vertical-align: top;
+            word-break: break-word; /* Força a quebra de palavras longas se necessário */
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: bold;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #d9534f;
+            font-size: 1.2em;
+            white-space: nowrap; /* Garante que o número e o 'U' fiquem sempre juntos */
+        }
+        .info-diluicao {
+            font-size: 0.8em;
+            color: #666;
+            display: block;
+            margin-top: 2px;
+        }
+        .alerta-idade {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            border-left: 5px solid #ffeeba;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Calculadora de Doses (Até 2h)</h2>
+    
+    <div class="form-group">
+        <label for="peso">Peso Real (kg):</label>
+        <input type="number" id="peso" step="0.1" placeholder="Ex: 70">
+    </div>
+    
+    <div class="form-group">
+        <label for="altura">Altura (cm):</label>
+        <input type="number" id="altura" placeholder="Ex: 170">
+    </div>
+    
+    <div class="form-group">
+        <label for="idade">Idade (anos):</label>
+        <input type="number" id="idade" placeholder="Ex: 35">
+    </div>
+    
+    <div class="form-group">
+        <label for="sexo">Sexo:</label>
+        <select id="sexo">
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+        </select>
+    </div>
+    
+    <button onclick="calcular()">Calcular Doses</button>
+
+    <div id="resultados" class="results-section">
+        <div id="alertaIdade" class="alerta-idade"></div>
+
+        <div class="results-title">Dados Antropométricos</div>
+        <div class="table-responsive">
+            <table>
+                <tr><td>IMC:</td><td><span id="resIMC"></span> kg/m²</td></tr>
+                <tr><td>Peso Ideal (Devine):</td><td><span id="resPI"></span> kg</td></tr>
+                <tr><td>Massa Magra (Boer):</td><td><span id="resMM" style="font-weight: bold; color: #0056b3;"></span> kg</td></tr>
+                <tr><td>Peso Ajustado (25%):</td><td><span id="resPA"></span> kg</td></tr>
+            </table>
+        </div>
+
+        <div class="results-title">Sugestão de Doses e Volumes (Massa Magra)</div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Fármaco / Conc.</th>
+                        <th style="width: 20%;">Alvo Orig.</th>
+                        <th style="width: 20%;">Dose Corrig.</th>
+                        <th style="width: 20%;">Volume (100 U = 1 mL)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr id="linhaDex">
+                        <td>
+                            <strong>Dexmedetomidina</strong>
+                            <span class="info-diluicao">100 mcg/mL</span>
+                        </td>
+                        <td>0,33 mcg/kg</td>
+                        <td><span id="doseDex"></span> mcg</td>
+                        <td class="highlight"><span id="uDex"></span> U</td>
+                    </tr>
+                    <tr id="linhaKet">
+                        <td>
+                            <strong>Ketamina</strong>
+                            <span class="info-diluicao">50 mg/mL</span>
+                        </td>
+                        <td>0,17 mg/kg</td>
+                        <td><span id="doseKet"></span> mg</td>
+                        <td class="highlight"><span id="uKet"></span> U</td>
+                    </tr>
+                    <tr id="linhaMet">
+                        <td>
+                            <strong>Metadona</strong>
+                            <span class="info-diluicao">10 mg/mL</span>
+                        </td>
+                        <td>0,15 mg/kg</td>
+                        <td><span id="doseMet"></span> mg</td>
+                        <td class="highlight"><span id="uMet"></span> U</td>
+                    </tr>
+                    <tr id="linhaMorfina" style="display: none;">
+                        <td>
+                            <strong>Morfina</strong>
+                            <span id="labelMorfina" class="info-diluicao">10 mg/mL</span>
+                        </td>
+                        <td>0,05 mg/kg</td>
+                        <td><span id="doseMorf"></span> mg</td>
+                        <td class="highlight"><span id="uMorf"></span> U</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function calcular() {
+    const peso = parseFloat(document.getElementById('peso').value);
+    const alturaCm = parseFloat(document.getElementById('altura').value);
+    const idade = parseInt(document.getElementById('idade').value);
+    const sexo = document.getElementById('sexo').value;
+
+    if (!peso || !alturaCm || isNaN(idade)) {
+        alert("Por favor, preencha todos os campos corretamente.");
+        return;
+    }
+
+    const alturaM = alturaCm / 100;
+
+    // 1. IMC e Pesos de Referência
+    const imc = peso / (alturaM * alturaM);
+
+    let pesoIdeal = 0;
+    const polegadasAcima5Pes = (alturaCm - 152.4) / 2.54;
+    if (sexo === 'M') {
+        pesoIdeal = 50 + (2.3 * polegadasAcima5Pes);
+    } else {
+        pesoIdeal = 45.5 + (2.3 * polegadasAcima5Pes);
+    }
+
+    let massaMagra = 0;
+    if (sexo === 'M') {
+        massaMagra = (0.407 * peso) + (0.267 * alturaCm) - 19.2;
+    } else {
+        massaMagra = (0.252 * peso) + (0.473 * alturaCm) - 48.3;
+    }
+    if (massaMagra > peso) massaMagra = peso;
+    if (massaMagra < 0) massaMagra = 0;
+
+    let pesoAjustado = peso;
+    if (peso > pesoIdeal) {
+        pesoAjustado = pesoIdeal + 0.25 * (peso - pesoIdeal);
+    }
+
+    // Exibe dados antropométricos
+    document.getElementById('resIMC').innerText = imc.toFixed(1);
+    document.getElementById('resPI').innerText = pesoIdeal.toFixed(1);
+    document.getElementById('resMM').innerText = massaMagra.toFixed(1);
+    document.getElementById('resPA').innerText = pesoAjustado.toFixed(1);
+
+    // 2. Definição do Fator de Redução por Idade
+    let fatorIdade = 1.0;
+    const alertaDiv = document.getElementById('alertaIdade');
+    alertaDiv.style.display = 'none';
+
+    if (idade >= 60 && idade <= 69) {
+        fatorIdade = 0.5;
+        alertaDiv.innerText = "⚠️ Paciente idoso (60-69 anos): Doses reduzidas em 50%.";
+        alertaDiv.style.display = 'block';
+    } else if (idade >= 70) {
+        fatorIdade = 0.25;
+        alertaDiv.innerText = "⚠️ Paciente idoso (≥ 70 anos): Doses reduzidas em 75% e Dexmedetomidina omitida.";
+        alertaDiv.style.display = 'block';
+    } else if (idade < 16) {
+        alertaDiv.innerText = "👶 Paciente pediátrico/jovem (< 16 anos): Metadona omitida. Morfina adicionada.";
+        alertaDiv.style.display = 'block';
+    }
+
+    // 3. Cálculos das Doses Absolutas
+    const doseDex = (massaMagra * 0.33) * fatorIdade;
+    const doseKet = (massaMagra * 0.17) * fatorIdade;
+    const doseMet = (massaMagra * 0.15) * fatorIdade;
+    const doseMorf = (massaMagra * 0.05);
+
+    // 4. Lógica Dinâmica da Morfina
+    let uMorf = 0;
+    const labelMorfina = document.getElementById('labelMorfina');
+    
+    if (doseMorf <= 2.0) {
+        uMorf = doseMorf * 100;
+        labelMorfina.innerHTML = "Conc: <strong>1 mg/mL</strong> (&le; 2mg)";
+    } else {
+        uMorf = (doseMorf / 10) * 100;
+        labelMorfina.innerHTML = "Conc: <strong>10 mg/mL</strong> (> 2mg)";
+    }
+
+    // 5. Conversão dos Demais para Unidades de Insulina (100 U = 1 mL)
+    const uDex = (doseDex / 100) * 100; 
+    const uKet = (doseKet / 50) * 100;  
+    const uMet = (doseMet / 10) * 100;  
+
+    // 6. Inserção dos valores calculados na tabela
+    document.getElementById('doseDex').innerText = doseDex.toFixed(2);
+    document.getElementById('uDex').innerText = uDex.toFixed(1);
+
+    document.getElementById('doseKet').innerText = doseKet.toFixed(2);
+    document.getElementById('uKet').innerText = uKet.toFixed(1);
+
+    document.getElementById('doseMet').innerText = doseMet.toFixed(2);
+    document.getElementById('uMet').innerText = uMet.toFixed(1);
+
+    document.getElementById('doseMorf').innerText = doseMorf.toFixed(2);
+    document.getElementById('uMorf').innerText = uMorf.toFixed(1);
+
+    // 7. Controle de visibilidade das linhas (Gatilhos de Idade)
+    document.getElementById('linhaDex').style.display = 'table-row';
+    document.getElementById('linhaMet').style.display = 'table-row';
+    document.getElementById('linhaMorfina').style.display = 'none';
+
+    if (idade >= 70) {
+        document.getElementById('linhaDex').style.display = 'none';
+    }
+
+    if (idade < 16) {
+        document.getElementById('linhaMet').style.display = 'none';
+        document.getElementById('linhaMorfina').style.display = 'table-row';
+    }
+
+    // Mostra a seção de resultados
+    document.getElementById('resultados').style.display = 'block';
+}
+</script>
+
+</body>
+</html>
