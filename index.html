@@ -10,7 +10,7 @@
             background-color: #f4f6f9;
             color: #333;
             margin: 0;
-            padding: 10px; /* Reduzido para dar mais espaço em telas pequenas */
+            padding: 10px;
         }
         .container {
             max-width: 650px;
@@ -36,11 +36,11 @@
         }
         input, select {
             width: 100%;
-            padding: 10px; /* Aumentado levemente para melhorar o toque no celular */
+            padding: 10px;
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 16px; /* Evita zoom automático no iOS */
+            font-size: 16px;
         }
         button {
             width: 100%;
@@ -71,8 +71,6 @@
             border-bottom: 2px solid #0056b3;
             padding-bottom: 5px;
         }
-        
-        /* Ajustes críticos para a tabela não vazar na tela do celular */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
@@ -82,14 +80,14 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px; /* Tamanho levemente reduzido para garantir o encaixe */
+            font-size: 13px;
         }
         th, td {
-            padding: 8px 4px; /* Otimização de espaçamento interno */
+            padding: 8px 4px;
             text-align: left;
             border-bottom: 1px solid #ddd;
-            vertical-align: top;
-            word-break: break-word; /* Força a quebra de palavras longas se necessário */
+            vertical-align: middle;
+            word-break: break-word;
         }
         th {
             background-color: #f8f9fa;
@@ -100,7 +98,7 @@
             font-weight: bold;
             color: #d9534f;
             font-size: 1.2em;
-            white-space: nowrap; /* Garante que o número e o 'U' fiquem sempre juntos */
+            white-space: nowrap;
         }
         .info-diluicao {
             font-size: 0.8em;
@@ -118,6 +116,9 @@
             font-weight: bold;
             border-left: 5px solid #ffeeba;
             display: none;
+        }
+        .metadona-row {
+            background-color: #fdfdfd;
         }
     </style>
 </head>
@@ -194,14 +195,32 @@
                         <td><span id="doseKet"></span> mg</td>
                         <td class="highlight"><span id="uKet"></span> U</td>
                     </tr>
-                    <tr id="linhaMet">
+                    <tr class="linhaMet grupoMetadona">
                         <td>
-                            <strong>Metadona</strong>
+                            <strong>Metadona (Opção A)</strong>
                             <span class="info-diluicao">10 mg/mL</span>
                         </td>
                         <td>0,15 mg/kg</td>
-                        <td><span id="doseMet"></span> mg</td>
-                        <td class="highlight"><span id="uMet"></span> U</td>
+                        <td><span id="doseMet15"></span> mg</td>
+                        <td class="highlight"><span id="uMet15"></span> U</td>
+                    </tr>
+                    <tr class="linhaMet grupoMetadona">
+                        <td>
+                            <strong>Metadona (Opção B)</strong>
+                            <span class="info-diluicao">10 mg/mL</span>
+                        </td>
+                        <td>0,20 mg/kg</td>
+                        <td><span id="doseMet20"></span> mg</td>
+                        <td class="highlight"><span id="uMet20"></span> U</td>
+                    </tr>
+                    <tr class="linhaMet grupoMetadona">
+                        <td>
+                            <strong>Metadona (Opção C)</strong>
+                            <span class="info-diluicao">10 mg/mL</span>
+                        </td>
+                        <td>0,25 mg/kg</td>
+                        <td><span id="doseMet25"></span> mg</td>
+                        <td class="highlight"><span id="uMet25"></span> U</td>
                     </tr>
                     <tr id="linhaMorfina" style="display: none;">
                         <td>
@@ -284,13 +303,17 @@ function calcular() {
     // 3. Cálculos das Doses Absolutas
     const doseDex = (massaMagra * 0.33) * fatorIdade;
     const doseKet = (massaMagra * 0.17) * fatorIdade;
-    const doseMet = (massaMagra * 0.15) * fatorIdade;
+    
+    // Três variações da Metadona passando pela correção de idade
+    const doseMet15 = (massaMagra * 0.15) * fatorIdade;
+    const doseMet20 = (massaMagra * 0.20) * fatorIdade;
+    const doseMet25 = (massaMagra * 0.25) * fatorIdade;
+    
     const doseMorf = (massaMagra * 0.05);
 
     // 4. Lógica Dinâmica da Morfina
     let uMorf = 0;
     const labelMorfina = document.getElementById('labelMorfina');
-    
     if (doseMorf <= 2.0) {
         uMorf = doseMorf * 100;
         labelMorfina.innerHTML = "Conc: <strong>1 mg/mL</strong> (&le; 2mg)";
@@ -299,10 +322,14 @@ function calcular() {
         labelMorfina.innerHTML = "Conc: <strong>10 mg/mL</strong> (> 2mg)";
     }
 
-    // 5. Conversão dos Demais para Unidades de Insulina (100 U = 1 mL)
+    // 5. Conversão para Unidades de Insulina (100 U = 1 mL)
     const uDex = (doseDex / 100) * 100; 
     const uKet = (doseKet / 50) * 100;  
-    const uMet = (doseMet / 10) * 100;  
+    
+    // Metadona (10 mg/mL) -> dose / 10 * 100
+    const uMet15 = (doseMet15 / 10) * 100;
+    const uMet20 = (doseMet20 / 10) * 100;
+    const uMet25 = (doseMet25 / 10) * 100;
 
     // 6. Inserção dos valores calculados na tabela
     document.getElementById('doseDex').innerText = doseDex.toFixed(2);
@@ -311,23 +338,36 @@ function calcular() {
     document.getElementById('doseKet').innerText = doseKet.toFixed(2);
     document.getElementById('uKet').innerText = uKet.toFixed(1);
 
-    document.getElementById('doseMet').innerText = doseMet.toFixed(2);
-    document.getElementById('uMet').innerText = uMet.toFixed(1);
+    document.getElementById('doseMet15').innerText = doseMet15.toFixed(2);
+    document.getElementById('uMet15').innerText = uMet15.toFixed(1);
+
+    document.getElementById('doseMet20').innerText = doseMet20.toFixed(2);
+    document.getElementById('uMet20').innerText = uMet20.toFixed(1);
+
+    document.getElementById('doseMet25').innerText = doseMet25.toFixed(2);
+    document.getElementById('uMet25').innerText = uMet25.toFixed(1);
 
     document.getElementById('doseMorf').innerText = doseMorf.toFixed(2);
     document.getElementById('uMorf').innerText = uMorf.toFixed(1);
 
     // 7. Controle de visibilidade das linhas (Gatilhos de Idade)
     document.getElementById('linhaDex').style.display = 'table-row';
-    document.getElementById('linhaMet').style.display = 'table-row';
     document.getElementById('linhaMorfina').style.display = 'none';
+    
+    // Exibe ou oculta o bloco completo de metadonas usando classe CSS
+    const linhasMetadona = document.getElementsByClassName('linhaMet');
+    for (let i = 0; i < linhasMetadona.length; i++) {
+        linhasMetadona[i].style.display = 'table-row';
+    }
 
     if (idade >= 70) {
         document.getElementById('linhaDex').style.display = 'none';
     }
 
     if (idade < 16) {
-        document.getElementById('linhaMet').style.display = 'none';
+        for (let i = 0; i < linhasMetadona.length; i++) {
+            linhasMetadona[i].style.display = 'none';
+        }
         document.getElementById('linhaMorfina').style.display = 'table-row';
     }
 
