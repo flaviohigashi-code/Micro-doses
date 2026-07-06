@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Doses - Cirurgias Curtas</title>
+    <title>Sugestão de Doses para Anestesia Multimodal by Higashi</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,8 +23,15 @@
         h2 {
             text-align: center;
             color: #0056b3;
+            margin-bottom: 5px;
+            font-size: 1.35em;
+        }
+        .subtítulo {
+            text-align: center;
+            color: #666;
             margin-bottom: 20px;
-            font-size: 1.4em;
+            font-size: 0.95em;
+            font-style: italic;
         }
         .form-group {
             margin-bottom: 15px;
@@ -117,15 +124,13 @@
             border-left: 5px solid #ffeeba;
             display: none;
         }
-        .metadona-row {
-            background-color: #fdfdfd;
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Calculadora de Doses (Até 2h)</h2>
+    <h2>Sugestão de Doses para Anestesia Multimodal by Higashi</h2>
+    <div class="subtítulo">Cirurgias de até 2h</div>
     
     <div class="form-group">
         <label for="peso">Peso Real (kg):</label>
@@ -195,7 +200,7 @@
                         <td><span id="doseKet"></span> mg</td>
                         <td class="highlight"><span id="uKet"></span> U</td>
                     </tr>
-                    <tr class="linhaMet grupoMetadona">
+                    <tr class="linhaMet">
                         <td>
                             <strong>Metadona (Opção A)</strong>
                             <span class="info-diluicao">10 mg/mL</span>
@@ -204,7 +209,7 @@
                         <td><span id="doseMet15"></span> mg</td>
                         <td class="highlight"><span id="uMet15"></span> U</td>
                     </tr>
-                    <tr class="linhaMet grupoMetadona">
+                    <tr class="linhaMet">
                         <td>
                             <strong>Metadona (Opção B)</strong>
                             <span class="info-diluicao">10 mg/mL</span>
@@ -213,7 +218,7 @@
                         <td><span id="doseMet20"></span> mg</td>
                         <td class="highlight"><span id="uMet20"></span> U</td>
                     </tr>
-                    <tr class="linhaMet grupoMetadona">
+                    <tr class="linhaMet">
                         <td>
                             <strong>Metadona (Opção C)</strong>
                             <span class="info-diluicao">10 mg/mL</span>
@@ -250,8 +255,6 @@ function calcular() {
     }
 
     const alturaM = alturaCm / 100;
-
-    // 1. IMC e Pesos de Referência
     const imc = peso / (alturaM * alturaM);
 
     let pesoIdeal = 0;
@@ -276,13 +279,11 @@ function calcular() {
         pesoAjustado = pesoIdeal + 0.25 * (peso - pesoIdeal);
     }
 
-    // Exibe dados antropométricos
     document.getElementById('resIMC').innerText = imc.toFixed(1);
     document.getElementById('resPI').innerText = pesoIdeal.toFixed(1);
     document.getElementById('resMM').innerText = massaMagra.toFixed(1);
     document.getElementById('resPA').innerText = pesoAjustado.toFixed(1);
 
-    // 2. Definição do Fator de Redução por Idade
     let fatorIdade = 1.0;
     const alertaDiv = document.getElementById('alertaIdade');
     alertaDiv.style.display = 'none';
@@ -300,18 +301,13 @@ function calcular() {
         alertaDiv.style.display = 'block';
     }
 
-    // 3. Cálculos das Doses Absolutas
     const doseDex = (massaMagra * 0.33) * fatorIdade;
     const doseKet = (massaMagra * 0.17) * fatorIdade;
-    
-    // Três variações da Metadona passando pela correção de idade
     const doseMet15 = (massaMagra * 0.15) * fatorIdade;
     const doseMet20 = (massaMagra * 0.20) * fatorIdade;
     const doseMet25 = (massaMagra * 0.25) * fatorIdade;
-    
     const doseMorf = (massaMagra * 0.05);
 
-    // 4. Lógica Dinâmica da Morfina
     let uMorf = 0;
     const labelMorfina = document.getElementById('labelMorfina');
     if (doseMorf <= 2.0) {
@@ -322,16 +318,12 @@ function calcular() {
         labelMorfina.innerHTML = "Conc: <strong>10 mg/mL</strong> (> 2mg)";
     }
 
-    // 5. Conversão para Unidades de Insulina (100 U = 1 mL)
     const uDex = (doseDex / 100) * 100; 
     const uKet = (doseKet / 50) * 100;  
-    
-    // Metadona (10 mg/mL) -> dose / 10 * 100
     const uMet15 = (doseMet15 / 10) * 100;
     const uMet20 = (doseMet20 / 10) * 100;
     const uMet25 = (doseMet25 / 10) * 100;
 
-    // 6. Inserção dos valores calculados na tabela
     document.getElementById('doseDex').innerText = doseDex.toFixed(2);
     document.getElementById('uDex').innerText = uDex.toFixed(1);
 
@@ -350,11 +342,9 @@ function calcular() {
     document.getElementById('doseMorf').innerText = doseMorf.toFixed(2);
     document.getElementById('uMorf').innerText = uMorf.toFixed(1);
 
-    // 7. Controle de visibilidade das linhas (Gatilhos de Idade)
     document.getElementById('linhaDex').style.display = 'table-row';
     document.getElementById('linhaMorfina').style.display = 'none';
     
-    // Exibe ou oculta o bloco completo de metadonas usando classe CSS
     const linhasMetadona = document.getElementsByClassName('linhaMet');
     for (let i = 0; i < linhasMetadona.length; i++) {
         linhasMetadona[i].style.display = 'table-row';
@@ -371,7 +361,6 @@ function calcular() {
         document.getElementById('linhaMorfina').style.display = 'table-row';
     }
 
-    // Mostra a seção de resultados
     document.getElementById('resultados').style.display = 'block';
 }
 </script>
