@@ -284,61 +284,55 @@ function calcular() {
     document.getElementById('resMM').innerText = massaMagra.toFixed(1);
     document.getElementById('resPA').innerText = pesoAjustado.toFixed(1);
 
-    // Valores Base de Alvo Alavancados
+    // Alvos base padrão
     let valAlvoDex = 0.33;
     let valAlvoKet = 0.17;
     let valAlvoMetA = 0.15;
     let valAlvoMetB = 0.20;
     let valAlvoMetC = 0.25;
 
-    // Fatores Multiplicadores (Trabalham com retenção ou decréscimo direto)
-    let fatorDex = 1.0;
-    let fatorKet = 1.0;
-
     const alertaDiv = document.getElementById('alertaIdade');
     alertaDiv.style.display = 'none';
 
     if (idade >= 65 && idade <= 75) {
-        fatorDex = 0.7; // Dexmedetomidina reduzida em 30% (X 0.7)
-        fatorKet = 1.0; // Mantém dose padrão de Ketamina (X 1.0)
-        
-        // Alvos ajustados de Metadona para esta faixa etária
+        valAlvoDex = 0.33 * 0.7; // Reduz em 30% do alvo absoluto
+        valAlvoKet = 0.17;       // Mantém integral
         valAlvoMetA = 0.10;
         valAlvoMetB = 0.15;
         valAlvoMetC = 0.20;
 
-        alertaDiv.innerText = "⚠️ Idoso (65-75 anos): Dexmedetomidina reduzida em 30%. Ketamina integral. Metadona escalonada em 0.10, 0.15 e 0.20 mg/kg.";
+        alertaDiv.innerText = "⚠️ Idoso (65-75 anos): Dexmedetomidina reduzida em 30% no alvo. Ketamina integral.";
         alertaDiv.style.display = 'block';
     } else if (idade > 75) {
-        fatorKet = 0.3; // Ketamina X 0.3 (Reduzida em 30% do valor total original)
-        fatorDex = 0.5; // Dexmedetomidina X 0.5 (Reduzida em 50% do valor total original)
-        
-        // Mantém os mesmos alvos de Metadona adotados na faixa de 65-75 anos
+        valAlvoDex = 0.33 * 0.5; // Dexmedetomidina X 0.5 (Reduz 50%)
+        valAlvoKet = 0.17 * 0.3; // Ketamina X 0.3 (Reduz 30%)
         valAlvoMetA = 0.10;
         valAlvoMetB = 0.15;
         valAlvoMetC = 0.20;
 
-        alertaDiv.innerText = "⚠️ Idoso (> 75 anos): Ketamina reduzida a fator 0.3, Dexmedetomidina reduzida a fator 0.5. Metadona mantida em 0.10, 0.15 e 0.20 mg/kg.";
+        alertaDiv.innerText = "⚠️ Idoso (> 75 anos): Alvos calculados diretamente com reduções (Ketamina X 0.3 / Dexmedetomidina X 0.5).";
         alertaDiv.style.display = 'block';
     } else if (idade < 16) {
-        alertaDiv.innerText = "👶 Pediátrico/Jovem (< 16 anos): Metadona omitida. Morfina adicionada.";
+        valAlvoDex = 0.33; // Integral para pediatria conforme solicitado
+        valAlvoKet = 0.17; // Integral para pediatria conforme solicitado
+        alertaDiv.innerText = "👶 Pediátrico (< 16 anos): Metadona oculta. Morfina adicionada. Dexmedetomidina e Ketamina mantidas nas doses padrão.";
         alertaDiv.style.display = 'block';
     }
 
-    // Processamento Dinâmico de Texto da Tabela
-    document.getElementById('alvoDex').innerText = (0.33 * fatorDex).toFixed(4).replace(/\.?0+$/, "");
-    document.getElementById('alvoKet').innerText = (0.17 * fatorKet).toFixed(4).replace(/\.?0+$/, "");
+    // Exibição direta do alvo corrigido por extenso na tabela
+    document.getElementById('alvoDex').innerText = valAlvoDex.toFixed(3).replace(/\.?0+$/, "");
+    document.getElementById('alvoKet').innerText = valAlvoKet.toFixed(3).replace(/\.?0+$/, "");
     document.getElementById('alvoMetA').innerText = valAlvoMetA;
     document.getElementById('alvoMetB').innerText = valAlvoMetB;
     document.getElementById('alvoMetC').innerText = valAlvoMetC;
 
-    // Cálculo das Doses Absolutas
-    const doseDex = (massaMagra * 0.33) * fatorDex;
-    const doseKet = (massaMagra * 0.17) * fatorKet;
-    const doseMetA = (massaMagra * valAlvoMetA);
-    const doseMetB = (massaMagra * valAlvoMetB);
-    const doseMetC = (massaMagra * valAlvoMetC);
-    const doseMorf = (massaMagra * 0.05);
+    // Cálculo das Doses Absolutas Finais
+    const doseDex = massaMagra * valAlvoDex;
+    const doseKet = massaMagra * valAlvoKet;
+    const doseMetA = massaMagra * valAlvoMetA;
+    const doseMetB = massaMagra * valAlvoMetB;
+    const doseMetC = massaMagra * valAlvoMetC;
+    const doseMorf = massaMagra * 0.05;
 
     // Lógica Volumétrica da Morfina
     let uMorf = 0;
@@ -351,14 +345,14 @@ function calcular() {
         labelMorfina.innerHTML = "Conc: <strong>10 mg/mL</strong> (> 2mg)";
     }
 
-    // Conversão para Unidades Seringa de Insulina
+    // Conversão direta para unidades
     const uDex = (doseDex / 100) * 100; 
     const uKet = (doseKet / 50) * 100;  
     const uMetA = (doseMetA / 10) * 100;
     const uMetB = (doseMetB / 10) * 100;
     const uMetC = (doseMetC / 10) * 100;
 
-    // Injeção de Valores no HTML
+    // Renderização numérica das caixas
     document.getElementById('doseDex').innerText = doseDex.toFixed(2);
     document.getElementById('uDex').innerText = uDex.toFixed(1);
 
@@ -378,7 +372,6 @@ function calcular() {
     document.getElementById('uMorf').innerText = uMorf.toFixed(1);
 
     // Controle Estrito de Visibilidade das Linhas
-    document.getElementById('linhaDex').style.display = 'table-row';
     document.getElementById('linhaMorfina').style.display = 'none';
     
     const linhasMetadona = document.getElementsByClassName('linhaMet');
@@ -386,7 +379,6 @@ function calcular() {
         linhasMetadona[i].style.display = 'table-row';
     }
 
-    // A Dexmedetomidina agora se mantém visível em >75 anos (com a redução de 50% solicitada)
     if (idade < 16) {
         for (let i = 0; i < linhasMetadona.length; i++) {
             linhasMetadona[i].style.display = 'none';
